@@ -1,4 +1,5 @@
 # Copyright (c) 2020 Andika Wasisto
+# Modified by Tobias Raayoni Last
 #
 # Permission is hereby granted, free of charge, to any person obtaining a copy
 # of this software and associated documentation files (the "Software"), to deal
@@ -20,6 +21,7 @@
 
 import os
 import threading
+import json
 
 from flask import Flask, request, Response
 from flask_sockets import Sockets
@@ -35,98 +37,69 @@ sockets = Sockets(app)
 
 qng_wrapper = QngWrapperWindows() if (os.name == 'nt') else QngWrapperLinux()
 
-
 @app.route('/api/randint32')
 def randint32():
-    return Response(str(qng_wrapper.randint32()), content_type='text/plain')
-
+    try:
+        size = int(request.args.get('size'))
+        if size < 1:
+            return Response('size must be greater than 0', status=400, content_type='text/plain')
+        int32array = []
+        for x in range(0, size):
+            int32array.append(qng_wrapper.randint32())
+        return Response(json.dumps({"type": "string", "format": "int32", "length":1, "data": int32array, "success": "true"}), content_type='text/plain')
+    except (TypeError, ValueError) as e:
+        return Response(json.dumps({"error": str(e), "success":"false"}), status=400, content_type='text/plain')
 
 @app.route('/api/randuniform')
 def randuniform():
-    return Response(str(qng_wrapper.randuniform()), content_type='text/plain')
-
+    try:
+        size = int(request.args.get('size'))
+        if size < 1:
+            return Response('size must be greater than 0', status=400, content_type='text/plain')
+        uniformarray = []
+        for x in range(0, size):
+            uniformarray.append(qng_wrapper.randuniform())
+        return Response(json.dumps({"type": "string", "format": "uniform", "length":1, "data": uniformarray, "success": "true"}), content_type='text/plain')
+    except (TypeError, ValueError) as e:
+        return Response(json.dumps({"error": str(e), "success":"false"}), status=400, content_type='text/plain')
 
 @app.route('/api/randnormal')
 def randnormal():
-    return Response(str(qng_wrapper.randnormal()), content_type='text/plain')
+    try:
+        size = int(request.args.get('size'))
+        if size < 1:
+            return Response('size must be greater than 0', status=400, content_type='text/plain')
+        normarray = []
+        for x in range(0, size):
+            normarray.append(qng_wrapper.randnormal())
+        return Response(json.dumps({"type": "string", "format": "normal", "length":1, "data": normarray, "success": "true"}), content_type='text/plain')
+    except (TypeError, ValueError) as e:
+        return Response(json.dumps({"error": str(e), "success":"false"}), status=400, content_type='text/plain')
 
-
-@app.route('/api/randbytes')
-def randbytes():
+@app.route('/api/randhex')
+def randhex():
     try:
         length = int(request.args.get('length'))
+        size = int(request.args.get('size'))
         if length < 1:
             return Response('length must be greater than 0', status=400, content_type='text/plain')
-        return Response(qng_wrapper.randbytes(length), content_type='application/octet-stream')
+        if size < 1:
+            return Response('size must be greater than 0', status=400, content_type='text/plain')
+        hexarray = []
+        for x in range(0, size):
+            hexarray.append(qng_wrapper.randbytes(length).hex())
+        return Response(json.dumps({"type": "string", "format": "hex", "length":1, "size": length, "data": hexarray, "success": "true"}), content_type='text/plain')
     except (TypeError, ValueError) as e:
-        return Response(str(e), status=400, content_type='text/plain')
-
+        return Response(json.dumps({"error": str(e), "success":"false"}), status=400, content_type='text/plain')
 
 @app.route('/api/clear')
 def clear():
     qng_wrapper.clear()
     return Response(status=204)
 
-
-@sockets.route('/ws')
-def ws(websocket):
-    subscribed = [False]
-    while not websocket.closed:
-        threading.Thread(target=handle_ws_message, args=(websocket.receive(), websocket, subscribed)).start()
-
-
-def handle_ws_message(message, websocket, subscribed):
-    try:
-        split_message = message.strip().upper().split()
-        if split_message[0] == 'RANDINT32':
-            websocket.send(str(qng_wrapper.randint32()))
-        elif split_message[0] == 'RANDUNIFORM':
-            websocket.send(str(qng_wrapper.randuniform()))
-        elif split_message[0] == 'RANDNORMAL':
-            websocket.send(str(qng_wrapper.randnormal()))
-        elif split_message[0] == 'RANDBYTES':
-            length = int(split_message[1])
-            if length < 1:
-                raise ValueError()
-            websocket.send(qng_wrapper.randbytes(length))
-        elif split_message[0] == 'SUBSCRIBEINT32':
-            if not subscribed[0]:
-                subscribed[0] = True
-                while subscribed[0] and not websocket.closed:
-                    websocket.send(str(qng_wrapper.randint32()))
-        elif split_message[0] == 'SUBSCRIBEUNIFORM':
-            if not subscribed[0]:
-                subscribed[0] = True
-                while subscribed[0] and not websocket.closed:
-                    websocket.send(str(qng_wrapper.randuniform()))
-        elif split_message[0] == 'SUBSCRIBENORMAL':
-            if not subscribed[0]:
-                subscribed[0] = True
-                while subscribed[0] and not websocket.closed:
-                    websocket.send(str(qng_wrapper.randnormal()))
-        elif split_message[0] == 'SUBSCRIBEBYTES':
-            chunk = int(split_message[1])
-            if chunk < 1:
-                raise ValueError()
-            if not subscribed[0]:
-                subscribed[0] = True
-                while subscribed[0] and not websocket.closed:
-                    websocket.send(qng_wrapper.randbytes(chunk))
-        elif split_message[0] == 'UNSUBSCRIBE':
-            subscribed[0] = False
-            websocket.send('UNSUBSCRIBED')
-        elif split_message[0] == 'CLEAR':
-            qng_wrapper.clear()
-    except (IndexError, ValueError, BlockingIOError):
-        pass
-    except Exception as e:
-        websocket.close(code=1011, message=str(e))
-
-
 @app.errorhandler(Exception)
 def handle_exception(e):
     return Response(e.description, status=e.code, content_type='text/plain')
-
 
 server = pywsgi.WSGIServer(('0.0.0.0', 62456), application=app, handler_class=WebSocketHandler)
 server.serve_forever()
