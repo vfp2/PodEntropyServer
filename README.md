@@ -18,70 +18,23 @@ Usage Example
 
 ### REST API
 
-	http://localhost:62456/api/randint32
-	< -1741405968
+	http://localhost:62456/api/randint32?length=3
+	< {"type": "string", "format": "int32", "length": 3, "data": [1524492492, -1194151004, 1365408501], "success": "true"}
 
-	http://localhost:62456/api/randuniform
-	< 0.20340009994
+	http://localhost:62456/api/randuniform?length=2
+	< {"type": "string", "format": "uniform", "length": 2, "data": [0.07230273403292031, 0.733570206706375], "success": "true"}
 
-	http://localhost:62456/api/randnormal
-	< 1.02206840644
+	http://localhost:62456/api/randnormal?length=1
+	< {"type": "string", "format": "normal", "length": 1, "data": [0.6430985466029758], "success": "true"}
 
-	http://localhost:62456/api/randbytes?length=16
-	< ���E��s_�b����G�
-
-
-### WebSocket API
-	
-	ws://localhost:62456/ws
-	> RANDINT32
-	< 585865374
-
-	> RANDUNIFORM
-	< 0.70137183786
-
-	> RANDNORMAL
-	< -1.6120135370
-
-	> RANDBYTES 32
-	< �����9L).�!:���@Nh������d����_q�
-
-	> SUBSCRIBEINT32
-	< 1361330636
-	< -604581511
-	< 1510923919
-	< ...
-	> UNSUBSCRIBE
-	< UNSUBSCRIBED
-
-	> SUBSCRIBEUNIFORM
-	< 0.54623951886
-	< 0.67567578799
-	< 0.09746421443
-	< ...
-	> UNSUBSCRIBE
-	< UNSUBSCRIBED
-
-	> SUBSCRIBENORMAL
-	< -1.6120135370
-	< 0.02943381135
-	< -0.9883458007
-	< ...
-	> UNSUBSCRIBE
-	< UNSUBSCRIBED
-
-	> SUBSCRIBEBYTES 8
-	< �K����{�
-	< I]������
-	< ���.�t�U
-	< ...
-	> UNSUBSCRIBE
-	< UNSUBSCRIBED
+	http://localhost:62456/api/randhex?length=2&size=5
+	< {"type": "string", "format": "hex", "length": 2, "size": 5, "data": ["b90e1b01bc", "b59374fc0e"], "success": "true"}
 
 License
 -------
 
     Copyright (c) 2020 Andika Wasisto
+	Modified by Tobias Raayoni Last / Randonauts Co.
 
     Permission is hereby granted, free of charge, to any person obtaining a copy
     of this software and associated documentation files (the "Software"), to deal
