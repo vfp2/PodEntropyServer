@@ -25,6 +25,13 @@ class QngWrapperWindows:
         import win32com.client
         self._qng = win32com.client.Dispatch("QWQNG.QNG")
 
+    def deviceId(self):
+        try:
+            return self._qng.DeviceId
+        except:
+            self._qng.Reset()
+            return self._qng.DeviceId
+
     def randint32(self):
         try:
             return self._qng.RandInt32

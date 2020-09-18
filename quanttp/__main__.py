@@ -23,6 +23,8 @@ import os
 import sys
 import threading
 import json
+import socket
+import requests
 
 from flask import Flask, request, Response
 from flask_sockets import Sockets
@@ -49,9 +51,13 @@ def main():
     else:
         servername = sys.argv[1]
         port = int(sys.argv[2])
+        ip = requests.get('https://api.ipify.org').text
+        id = str(qng_wrapper.deviceId())
         print("----------------------------------------------------------------------------------------")
-        print("Serving Entropy as pod \"", servername, "\" on http://localhost:", port, "/api/...", sep='')
+        print("Serving Entropy from TRNG ", id, " as pod \"", servername, "\" on http://", ip, ":", port, "/api/...", sep='')
         print("----------------------------------------------------------------------------------------")
+        register = requests.post('https://webhook.site/02e1d079-ab19-4e29-9e13-1aacb17161ad', data = {'name': servername, 'device': id, 'ip': ip, 'port': port })
+        print(register)
         serve(servername, port)
 
 def serve(servername, port):
