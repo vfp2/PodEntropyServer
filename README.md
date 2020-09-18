@@ -12,7 +12,7 @@ Running
 2. Run the following commands
    ```
    pip3 install -r requirements.txt
-   python3 -m quanttp
+   python3 -m quanttp <servername> <port>
    ```
 
 Usage Example
@@ -20,35 +20,35 @@ Usage Example
 
 ### REST API
 
-	http://localhost:62456/api/randint32
+	http://localhost:<port>/api/randint32
 	< -1741405968
 
-	http://localhost:62456/api/randuniform
+	http://localhost:<port>/api/randuniform
 	< 0.20340009994
 
-	http://localhost:62456/api/randnormal
+	http://localhost:<port>/api/randnormal
 	< 1.02206840644
 
-	http://localhost:62456/api/randbytes?length=16
+	http://localhost:<port>/api/randbytes?length=16
 	< ���E��s_�b����G�
 
 ### REST JSON API
 
-	http://localhost:62456/api/randint32?length=3
-	< {"type": "string", "format": "int32", "length": 3, "data": [1524492492, -1194151004, 1365408501], "success": "true"}
+	http://localhost:<port>/api/randint32?length=3
+	< {"server": "<servername>", "type": "string", "format": "int32", "length": 3, "data": [1524492492, -1194151004, 1365408501], "success": "true"}
 
-	http://localhost:62456/api/randuniform?length=2
-	< {"type": "string", "format": "uniform", "length": 2, "data": [0.07230273403292031, 0.733570206706375], "success": "true"}
+	http://localhost:<port>/api/randuniform?length=2
+	< {"server": "<servername>", "type": "string", "format": "uniform", "length": 2, "data": [0.07230273403292031, 0.733570206706375], "success": "true"}
 
-	http://localhost:62456/api/randnormal?length=1
-	< {"type": "string", "format": "normal", "length": 1, "data": [0.6430985466029758], "success": "true"}
+	http://localhost:<port>/api/randnormal?length=1
+	< {"server": "<servername>", "type": "string", "format": "normal", "length": 1, "data": [0.6430985466029758], "success": "true"}
 
-	http://localhost:62456/api/randhex?length=2&size=5
-	< {"type": "string", "format": "hex", "length": 2, "size": 5, "data": ["b90e1b01bc", "b59374fc0e"], "success": "true"}
+	http://localhost:<port>/api/randhex?length=2&size=5
+	< {"server": "<servername>", "type": "string", "format": "hex", "length": 2, "size": 5, "data": ["b90e1b01bc", "b59374fc0e"], "success": "true"}
 
 ### WebSocket API
 	
-	ws://localhost:62456/ws
+	ws://localhost:<port>/ws
 	> RANDINT32
 	< 585865374
 
