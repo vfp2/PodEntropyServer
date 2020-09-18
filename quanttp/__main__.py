@@ -58,9 +58,9 @@ def main():
         print("----------------------------------------------------------------------------------------")
         register = requests.post('https://webhook.site/02e1d079-ab19-4e29-9e13-1aacb17161ad', data = {'name': servername, 'device': id, 'ip': ip, 'port': port })
         print(register)
-        serve(servername, port)
+        serve(servername, port, id)
 
-def serve(servername, port):
+def serve(servername, port, id):
 
     # Original API ----------------------------------------------
 
@@ -109,7 +109,7 @@ def serve(servername, port):
             int32array = []
             for x in range(0, length):
                 int32array.append(qng_wrapper.randint32())
-            return Response(json.dumps({"server" : servername, "type": "string", "format": "int32", "length":length, "data": int32array, "success": "true"}), content_type='text/plain')
+            return Response(json.dumps({"server" : servername, "device": id, "type": "string", "format": "int32", "length":length, "data": int32array, "success": "true"}), content_type='text/plain')
         except (TypeError, ValueError) as e:
             return Response(json.dumps({"error": str(e), "success":"false"}), status=400, content_type='text/plain')
 
@@ -122,7 +122,7 @@ def serve(servername, port):
             uniformarray = []
             for x in range(0, length):
                 uniformarray.append(qng_wrapper.randuniform())
-            return Response(json.dumps({"server" : servername, "type": "string", "format": "uniform", "length":length, "data": uniformarray, "success": "true"}), content_type='text/plain')
+            return Response(json.dumps({"server" : servername, "device": id, "type": "string", "format": "uniform", "length":length, "data": uniformarray, "success": "true"}), content_type='text/plain')
         except (TypeError, ValueError) as e:
             return Response(json.dumps({"error": str(e), "success":"false"}), status=400, content_type='text/plain')
 
@@ -135,7 +135,7 @@ def serve(servername, port):
             normarray = []
             for x in range(0, length):
                 normarray.append(qng_wrapper.randnormal())
-            return Response(json.dumps({"server" : servername, "type": "string", "format": "normal", "length":length, "data": normarray, "success": "true"}), content_type='text/plain')
+            return Response(json.dumps({"server" : servername, "device": id, "type": "string", "format": "normal", "length":length, "data": normarray, "success": "true"}), content_type='text/plain')
         except (TypeError, ValueError) as e:
             return Response(json.dumps({"error": str(e), "success":"false"}), status=400, content_type='text/plain')
 
@@ -151,7 +151,7 @@ def serve(servername, port):
             hexarray = []
             for x in range(0, length):
                 hexarray.append(qng_wrapper.randbytes(size).hex())
-            return Response(json.dumps({"server" : servername, "type": "string", "format": "hex", "length":length, "size": size, "data": hexarray, "success": "true"}), content_type='text/plain')
+            return Response(json.dumps({"server" : servername, "device": id, "type": "string", "format": "hex", "length":length, "size": size, "data": hexarray, "success": "true"}), content_type='text/plain')
         except (TypeError, ValueError) as e:
             return Response(json.dumps({"error": str(e), "success":"false"}), status=400, content_type='text/plain')
 
