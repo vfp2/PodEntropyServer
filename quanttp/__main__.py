@@ -36,8 +36,46 @@ sockets = Sockets(app)
 
 qng_wrapper = QngWrapperWindows() if (os.name == 'nt') else QngWrapperLinux()
 
+# Original API ----------------------------------------------
+
 @app.route('/api/randint32')
 def randint32():
+    return Response(str(qng_wrapper.randint32()), content_type='text/plain')
+
+
+@app.route('/api/randuniform')
+def randuniform():
+    return Response(str(qng_wrapper.randuniform()), content_type='text/plain')
+
+
+@app.route('/api/randnormal')
+def randnormal():
+    return Response(str(qng_wrapper.randnormal()), content_type='text/plain')
+
+@app.route('/api/randhex')
+def randhex():
+    try:
+        length = int(request.args.get('length'))
+        if length < 1:
+            return Response('length must be greater than 0', status=400, content_type='text/plain')
+        return Response(qng_wrapper.randbytes(length).hex(), content_type='text/plain')
+    except (TypeError, ValueError) as e:
+        return Response(str(e), status=400, content_type='text/plain')
+
+@app.route('/api/randbytes')
+def randbytes():
+    try:
+        length = int(request.args.get('length'))
+        if length < 1:
+            return Response('length must be greater than 0', status=400, content_type='text/plain')
+        return Response(qng_wrapper.randbytes(length), content_type='application/octet-stream')
+    except (TypeError, ValueError) as e:
+        return Response(str(e), status=400, content_type='text/plain')
+
+# JSON API ----------------------------------------------
+
+@app.route('/api/json/randint32')
+def randjsonint32():
     try:
         length = int(request.args.get('length'))
         if length < 1:
@@ -49,8 +87,8 @@ def randint32():
     except (TypeError, ValueError) as e:
         return Response(json.dumps({"error": str(e), "success":"false"}), status=400, content_type='text/plain')
 
-@app.route('/api/randuniform')
-def randuniform():
+@app.route('/api/json/randuniform')
+def randjsonuniform():
     try:
         length = int(request.args.get('length'))
         if length < 1:
@@ -62,8 +100,8 @@ def randuniform():
     except (TypeError, ValueError) as e:
         return Response(json.dumps({"error": str(e), "success":"false"}), status=400, content_type='text/plain')
 
-@app.route('/api/randnormal')
-def randnormal():
+@app.route('/api/json/randnormal')
+def randjsonnormal():
     try:
         length = int(request.args.get('length'))
         if length < 1:
@@ -75,8 +113,8 @@ def randnormal():
     except (TypeError, ValueError) as e:
         return Response(json.dumps({"error": str(e), "success":"false"}), status=400, content_type='text/plain')
 
-@app.route('/api/randhex')
-def randhex():
+@app.route('/api/json/randhex')
+def randjsonhex():
     try:
         length = int(request.args.get('length'))
         size = int(request.args.get('size'))
@@ -95,6 +133,69 @@ def randhex():
 def clear():
     qng_wrapper.clear()
     return Response(status=204)
+
+# Websockets ----------------------------------------------
+
+@sockets.route('/ws')
+def ws(websocket):
+    subscribed = [False]
+    while not websocket.closed:
+        threading.Thread(target=handle_ws_message, args=(websocket.receive(), websocket, subscribed)).start()
+
+def handle_ws_message(message, websocket, subscribed):
+    try:
+        split_message = message.strip().upper().split()
+        if split_message[0] == 'RANDINT32':
+            websocket.send(str(qng_wrapper.randint32()))
+        elif split_message[0] == 'RANDUNIFORM':
+            websocket.send(str(qng_wrapper.randuniform()))
+        elif split_message[0] == 'RANDNORMAL':
+            websocket.send(str(qng_wrapper.randnormal()))
+        elif split_message[0] == 'RANDBYTES':
+            length = int(split_message[1])
+            if length < 1:
+                raise ValueError()
+            websocket.send(qng_wrapper.randbytes(length))
+        elif split_message[0] == 'SUBSCRIBEINT32':
+            if not subscribed[0]:
+                subscribed[0] = True
+                while subscribed[0] and not websocket.closed:
+                    websocket.send(str(qng_wrapper.randint32()))
+        elif split_message[0] == 'SUBSCRIBEUNIFORM':
+            if not subscribed[0]:
+                subscribed[0] = True
+                while subscribed[0] and not websocket.closed:
+                    websocket.send(str(qng_wrapper.randuniform()))
+        elif split_message[0] == 'SUBSCRIBENORMAL':
+            if not subscribed[0]:
+                subscribed[0] = True
+                while subscribed[0] and not websocket.closed:
+                    websocket.send(str(qng_wrapper.randnormal()))
+        elif split_message[0] == 'SUBSCRIBEBYTES':
+            chunk = int(split_message[1])
+            if chunk < 1:
+                raise ValueError()
+            if not subscribed[0]:
+                subscribed[0] = True
+                while subscribed[0] and not websocket.closed:
+                    websocket.send(qng_wrapper.randbytes(chunk))
+        elif split_message[0] == 'SUBSCRIBEHEX':
+            chunk = int(split_message[1])
+            if chunk < 1:
+                raise ValueError()
+            if not subscribed[0]:
+                subscribed[0] = True
+                while subscribed[0] and not websocket.closed:
+                    websocket.send(qng_wrapper.randbytes(chunk).hex())
+        elif split_message[0] == 'UNSUBSCRIBE':
+            subscribed[0] = False
+            websocket.send('UNSUBSCRIBED')
+        elif split_message[0] == 'CLEAR':
+            qng_wrapper.clear()
+    except (IndexError, ValueError, BlockingIOError):
+        pass
+    except Exception as e:
+        websocket.close(code=1011, message=str(e))
 
 @app.errorhandler(Exception)
 def handle_exception(e):
