@@ -105,7 +105,7 @@ def serve(servername, port, id):
         try:
             length = int(request.args.get('length'))
             if length < 1:
-                return Response('length must be greater than 0', status=400, content_type='text/plain')
+                return Response(json.dumps({"error": 'length must be greater than 0', "success":"false"}), status=400, content_type='text/plain')
             int32array = []
             for x in range(0, length):
                 int32array.append(qng_wrapper.randint32())
@@ -118,7 +118,7 @@ def serve(servername, port, id):
         try:
             length = int(request.args.get('length'))
             if length < 1:
-                return Response('length must be greater than 0', status=400, content_type='text/plain')
+                return Response(json.dumps({"error": 'length must be greater than 0', "success":"false"}), status=400, content_type='text/plain')
             uniformarray = []
             for x in range(0, length):
                 uniformarray.append(qng_wrapper.randuniform())
@@ -131,7 +131,7 @@ def serve(servername, port, id):
         try:
             length = int(request.args.get('length'))
             if length < 1:
-                return Response('length must be greater than 0', status=400, content_type='text/plain')
+                return Response(json.dumps({"error": 'length must be greater than 0', "success":"false"}), status=400, content_type='text/plain')
             normarray = []
             for x in range(0, length):
                 normarray.append(qng_wrapper.randnormal())
@@ -145,9 +145,9 @@ def serve(servername, port, id):
             length = int(request.args.get('length'))
             size = int(request.args.get('size'))
             if length < 1:
-                return Response('length must be greater than 0', status=400, content_type='text/plain')
+                return Response(json.dumps({"error": 'length must be greater than 0', "success":"false"}), status=400, content_type='text/plain')
             if size < 1:
-                return Response('size must be greater than 0', status=400, content_type='text/plain')
+                return Response(json.dumps({"error": 'size must be greater than 0', "success":"false"}), status=400, content_type='text/plain')
             hexarray = []
             for x in range(0, length):
                 hexarray.append(qng_wrapper.randbytes(size).hex())
