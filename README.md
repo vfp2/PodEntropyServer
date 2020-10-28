@@ -34,16 +34,16 @@ Usage Example
 
 ### REST JSON API
 
-	http://localhost:<port>/api/randint32?length=3
+	http://localhost:<port>/api/json/randint32?length=3
 	< {"server": "<servername>", "type": "string", "format": "int32", "length": 3, "data": [1524492492, -1194151004, 1365408501], "success": "true"}
 
-	http://localhost:<port>/api/randuniform?length=2
+	http://localhost:<port>/api/json/randuniform?length=2
 	< {"server": "<servername>", "type": "string", "format": "uniform", "length": 2, "data": [0.07230273403292031, 0.733570206706375], "success": "true"}
 
-	http://localhost:<port>/api/randnormal?length=1
+	http://localhost:<port>/api/json/randnormal?length=1
 	< {"server": "<servername>", "type": "string", "format": "normal", "length": 1, "data": [0.6430985466029758], "success": "true"}
 
-	http://localhost:<port>/api/randhex?length=2&size=5
+	http://localhost:<port>/api/json/randhex?length=2&size=5
 	< {"server": "<servername>", "type": "string", "format": "hex", "length": 2, "size": 5, "data": ["b90e1b01bc", "b59374fc0e"], "success": "true"}
 
 ### WebSocket API
