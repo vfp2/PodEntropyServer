@@ -35,10 +35,19 @@ class QngWrapperLinux:
         self._qwqng_wrapper.RandNormal.restype = c_double
         self._qwqng_wrapper.RandBytes.argtypes = [c_void_p, c_int]
         self._qwqng_wrapper.RandBytes.restype = POINTER(c_char)
+        self._qwqng_wrapper.DeviceID.argtypes = [c_void_p]
+        self._qwqng_wrapper.DeviceID.restype = POINTER(c_char)
         self._qwqng_wrapper.Clear.argtypes = [c_void_p]
         self._qwqng_wrapper.Reset.argtypes = [c_void_p]
         self._qng_pointer = self._qwqng_wrapper.GetQwqngInstance()
 
+    def deviceId(self):
+        try:
+            return self._qwqng_wrapper.DeviceID(self._qng_pointer)
+        except:
+            self._qwqng_wrapper.Reset()
+            return self._qwqng_wrapper.DeviceID(self._qng_pointer)
+        
     def randint32(self):
         try:
             return self._qwqng_wrapper.RandInt32(self._qng_pointer)
