@@ -19,7 +19,7 @@
 # SOFTWARE.
 
 import platform
-from ctypes import cdll, c_void_p, c_int, c_double, POINTER, c_char
+from ctypes import cdll, c_void_p, c_int, c_double, POINTER, c_char, c_char_p, cast
 
 
 class QngWrapperLinux:
@@ -43,10 +43,10 @@ class QngWrapperLinux:
 
     def deviceId(self):
         try:
-            return self._qwqng_wrapper.DeviceID(self._qng_pointer)
+            return cast(self._qwqng_wrapper.DeviceID(self._qng_pointer), c_char_p).value.decode("utf-8")
         except:
-            self._qwqng_wrapper.Reset()
-            return self._qwqng_wrapper.DeviceID(self._qng_pointer)
+            self._qwqng_wrapper.Reset(self._qng_pointer)
+            return cast(self._qwqng_wrapper.DeviceID(self._qng_pointer), c_char_p).value.decode("utf-8")
         
     def randint32(self):
         try:
