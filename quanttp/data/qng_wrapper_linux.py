@@ -35,6 +35,8 @@ class QngWrapperLinux:
         self._qwqng_wrapper.RandNormal.restype = c_double
         self._qwqng_wrapper.RandBytes.argtypes = [c_void_p, c_int]
         self._qwqng_wrapper.RandBytes.restype = POINTER(c_char)
+        self._qwqng_wrapper.StatusString.argtypes = [c_void_p]
+        self._qwqng_wrapper.StatusString.restype = POINTER(c_char)
         self._qwqng_wrapper.DeviceID.argtypes = [c_void_p]
         self._qwqng_wrapper.DeviceID.restype = POINTER(c_char)
         self._qwqng_wrapper.Clear.argtypes = [c_void_p]
@@ -47,6 +49,13 @@ class QngWrapperLinux:
         except:
             self._qwqng_wrapper.Reset(self._qng_pointer)
             return cast(self._qwqng_wrapper.DeviceID(self._qng_pointer), c_char_p).value.decode("utf-8")
+            
+    def statusString(self):
+        try:
+            return cast(self._qwqng_wrapper.StatusString(self._qng_pointer), c_char_p).value.decode("utf-8")
+        except:
+            self._qwqng_wrapper.Reset(self._qng_pointer)
+            return cast(self._qwqng_wrapper.StatusString(self._qng_pointer), c_char_p).value.decode("utf-8")
         
     def randint32(self):
         try:
@@ -77,16 +86,14 @@ class QngWrapperLinux:
             return self._randbytes_arbitrary_length(length)
 
     def _randbytes_arbitrary_length(self, length):
-        if length <= 8192:
+        try:
             return self._qwqng_wrapper.RandBytes(self._qng_pointer, length)[:length]
-        else:
-            data = bytearray()
-            for x in range(length // 8192):
-                data.extend(self._qwqng_wrapper.RandBytes(self._qng_pointer, 8192)[:8192])
-            bytes_needed = length % 8192
-            if bytes_needed != 0:
-                data.extend(self._qwqng_wrapper.RandBytes(self._qng_pointer, bytes_needed)[:bytes_needed])
-            return bytes(data)
+        except:
+            self._qwqng_wrapper.Reset(self._qng_pointer)
 
     def clear(self):
         self._qwqng_wrapper.Clear(self._qng_pointer)
+        
+    def reset(self):
+        self._qwqng_wrapper.Reset(self._qng_pointer)
+

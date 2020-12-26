@@ -25,6 +25,7 @@ import threading
 import json
 import socket
 import requests
+import base64
 
 from flask import Flask, request, Response
 from flask_sockets import Sockets
@@ -88,6 +89,17 @@ def serve(servername, port, id):
         except (TypeError, ValueError) as e:
             return Response(str(e), status=400, content_type='text/plain')
 
+    @app.route('/api/randbase64')
+    def randbase64():
+        try:
+            length = int(request.args.get('length'))
+            if length < 1:
+                return Response('length must be greater than 0', status=400, content_type='text/plain')
+            return Response(base64.b64encode(qng_wrapper.randbytes(length)).decode('utf-8'), content_type='text/plain')
+        except (TypeError, ValueError) as e:
+            return Response(str(e), status=400, content_type='text/plain')
+
+
     @app.route('/api/randbytes')
     def randbytes():
         try:
@@ -98,67 +110,103 @@ def serve(servername, port, id):
         except (TypeError, ValueError) as e:
             return Response(str(e), status=400, content_type='text/plain')
 
+    @app.route('/api/clear')
+    def clear():
+        qng_wrapper.clear()
+        return Response(status=204)
+        
+    @app.route('/api/reset')
+    def reset():
+        qng_wrapper.reset()
+        return Response(status=204)
+
+    @app.route('/api/status')
+    def statusstring():
+        status = str(qng_wrapper.statusString())
+        return Response(json.dumps({"server" : servername, "device": id, "status": status}), status=400, content_type='text/plain')
+
     # JSON API ----------------------------------------------
 
     @app.route('/api/json/randint32')
     def randjsonint32():
         try:
+            status = str(qng_wrapper.statusString())
             length = int(request.args.get('length'))
             if length < 1:
                 return Response(json.dumps({"error": 'length must be greater than 0', "success":"false"}), status=400, content_type='text/plain')
             int32array = []
             for x in range(0, length):
                 int32array.append(qng_wrapper.randint32())
-            return Response(json.dumps({"server" : servername, "device": id, "type": "string", "format": "int32", "length":length, "data": int32array, "success": "true"}), content_type='text/plain')
+            return Response(json.dumps({"server" : servername, "device": id, "status": status, "type": "string", "format": "int32", "length":length, "data": int32array, "success": "true"}), content_type='text/plain')
         except (TypeError, ValueError) as e:
-            return Response(json.dumps({"error": str(e), "success":"false"}), status=400, content_type='text/plain')
+            return Response(json.dumps({"error": str(e), "status": status, "success":"false"}), status=400, content_type='text/plain')
 
     @app.route('/api/json/randuniform')
     def randjsonuniform():
         try:
+            status = str(qng_wrapper.statusString())
             length = int(request.args.get('length'))
             if length < 1:
                 return Response(json.dumps({"error": 'length must be greater than 0', "success":"false"}), status=400, content_type='text/plain')
             uniformarray = []
             for x in range(0, length):
                 uniformarray.append(qng_wrapper.randuniform())
-            return Response(json.dumps({"server" : servername, "device": id, "type": "string", "format": "uniform", "length":length, "data": uniformarray, "success": "true"}), content_type='text/plain')
+            return Response(json.dumps({"server" : servername, "device": id, "status": status, "type": "string", "format": "uniform", "length":length, "data": uniformarray, "success": "true"}), content_type='text/plain')
         except (TypeError, ValueError) as e:
-            return Response(json.dumps({"error": str(e), "success":"false"}), status=400, content_type='text/plain')
+            return Response(json.dumps({"error": str(e), "device": id, "status": status, "success":"false"}), status=400, content_type='text/plain')
 
     @app.route('/api/json/randnormal')
     def randjsonnormal():
         try:
+            status = str(qng_wrapper.statusString())
             length = int(request.args.get('length'))
             if length < 1:
                 return Response(json.dumps({"error": 'length must be greater than 0', "success":"false"}), status=400, content_type='text/plain')
             normarray = []
             for x in range(0, length):
                 normarray.append(qng_wrapper.randnormal())
-            return Response(json.dumps({"server" : servername, "device": id, "type": "string", "format": "normal", "length":length, "data": normarray, "success": "true"}), content_type='text/plain')
+            return Response(json.dumps({"server" : servername, "device": id, "status": status, "type": "string", "format": "normal", "length":length, "data": normarray, "success": "true"}), content_type='text/plain')
         except (TypeError, ValueError) as e:
-            return Response(json.dumps({"error": str(e), "success":"false"}), status=400, content_type='text/plain')
+            return Response(json.dumps({"error": str(e), "device": id, "status": status, "success":"false"}), status=400, content_type='text/plain')
 
     @app.route('/api/json/randhex')
     def randjsonhex():
         try:
+            status = str(qng_wrapper.statusString())
             length = int(request.args.get('length'))
             size = int(request.args.get('size'))
             if length < 1:
                 return Response(json.dumps({"error": 'length must be greater than 0', "success":"false"}), status=400, content_type='text/plain')
             if size < 1:
                 return Response(json.dumps({"error": 'size must be greater than 0', "success":"false"}), status=400, content_type='text/plain')
+#            entropy = qng_wrapper.randbytes(size*length)
             hexarray = []
             for x in range(0, length):
                 hexarray.append(qng_wrapper.randbytes(size).hex())
-            return Response(json.dumps({"server" : servername, "device": id, "type": "string", "format": "hex", "length":length, "size": size, "data": hexarray, "success": "true"}), content_type='text/plain')
+#                hexarray.append(entropy[x*size:(x+1)*size].hex())
+            return Response(json.dumps({"server" : servername, "device": id, "status": status, "type": "string", "format": "hex", "length":length, "size": size, "data": hexarray, "success": "true"}), content_type='text/plain')
         except (TypeError, ValueError) as e:
-            return Response(json.dumps({"error": str(e), "success":"false"}), status=400, content_type='text/plain')
-
-    @app.route('/api/clear')
-    def clear():
-        qng_wrapper.clear()
-        return Response(status=204)
+            return Response(json.dumps({"error": str(e), "device": id, "status": status, "success":"false"}), status=400, content_type='text/plain')
+            
+    @app.route('/api/json/randbase64')
+    def randjsonbase64():
+        try:
+            status = str(qng_wrapper.statusString())
+            length = int(request.args.get('length'))
+            size = int(request.args.get('size'))
+            if length < 1:
+                return Response(json.dumps({"error": 'length must be greater than 0', "success":"false"}), status=400, content_type='text/plain')
+            if size < 1:
+                return Response(json.dumps({"error": 'size must be greater than 0', "success":"false"}), status=400, content_type='text/plain')
+#            entropy = qng_wrapper.randbytes(size*length)
+            basearray = []
+            for x in range(0, length):
+                basearray.append(base64.b64encode(qng_wrapper.randbytes(size)).decode('utf-8'))
+#                basearray.append(base64.b64encode(entropy[x*size:(x+1)*size]).decode('utf-8'))
+            return Response(json.dumps({"server" : servername, "device": id, "status": status, "type": "string", "format": "base64", "length":length, "size": size, "data": basearray, "success": "true"}), content_type='text/plain')
+        except (TypeError, ValueError) as e:
+            return Response(json.dumps({"error": str(e), "device": id, "status": status, "success":"false"}), status=400, content_type='text/plain')
+        
 
     # Websockets ----------------------------------------------
 
