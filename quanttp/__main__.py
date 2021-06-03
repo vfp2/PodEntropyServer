@@ -152,7 +152,7 @@ def serve(servername, port, id):
     @app.route('/api/json/devices')
     def devicesjson():
         devices = str(mf_wrapper.deviceIds(True))
-        return Response(json.dumps(devices), content_type='application/json')
+        return Response('{"devices":'+devices+'}', content_type='application/json')
 
     @app.route('/api/json/randint32')
     def randjsonint32():
