@@ -144,7 +144,7 @@ def serve(servername, port, id):
 
     @app.route('/api/status')
     def status():
-        status = "online" # TODO implement me
+        status = "ONLINE" # TODO implement me
         return Response(json.dumps({"server" : servername, "devices": id, "status": status}), status=400, content_type='text/plain')
 
     # JSON API ----------------------------------------------
