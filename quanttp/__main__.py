@@ -1,5 +1,6 @@
 # Copyright (c) 2020 Andika Wasisto
 # Modified by Tobias Raayoni Last
+# Modified by soliax
 #
 # Permission is hereby granted, free of charge, to any person obtaining a copy
 # of this software and associated documentation files (the "Software"), to deal
@@ -32,13 +33,12 @@ from flask_sockets import Sockets
 from gevent import pywsgi
 from geventwebsocket.handler import WebSocketHandler
 
-from quanttp.data.qng_wrapper_linux import QngWrapperLinux
-from quanttp.data.qng_wrapper_windows import QngWrapperWindows
+from quanttp.data.meterfeeder_wrapper import MeterFeederWrapper
 
 app = Flask(__name__)
 sockets = Sockets(app)
 
-qng_wrapper = QngWrapperWindows() if (os.name == 'nt') else QngWrapperLinux()
+mf_wrapper = MeterFeederWrapper()
 
 def main():
     # Commandline Arguments (servername, port)
@@ -53,49 +53,65 @@ def main():
         servername = sys.argv[1]
         port = int(sys.argv[2])
         ip = requests.get('https://api.ipify.org').text
-        id = str(qng_wrapper.deviceId())
+        id = str(mf_wrapper.deviceIds(False))
         print("----------------------------------------------------------------------------------------")
         print("Serving Entropy from TRNG ", id, " as pod \"", servername, "\" on http://", ip, ":", port, "/api/...", sep='')
         print("----------------------------------------------------------------------------------------")
-        register = requests.post('https://webhook.site/02e1d079-ab19-4e29-9e13-1aacb17161ad', data = {'name': servername, 'device': id, 'ip': ip, 'port': port })
-        print(register)
         serve(servername, port, id)
 
 def serve(servername, port, id):
 
     # Original API ----------------------------------------------
 
+    @app.route('/api/devices')
+    def devices():
+        devices = str(mf_wrapper.deviceIds(False))
+        return Response(devices, content_type='text/plain')
+
     @app.route('/api/randint32')
     def randint32():
-        return Response(str(qng_wrapper.randint32()), content_type='text/plain')
-
+        deviceId = request.args.get('deviceId')
+        if len(deviceId) != 8:
+            return Response('deviceId must be a valid 8 character serial number', status=400, content_type='text/plain')
+        return Response(str(mf_wrapper.randint32(deviceId)), content_type='text/plain')
 
     @app.route('/api/randuniform')
     def randuniform():
-        return Response(str(qng_wrapper.randuniform()), content_type='text/plain')
-
+        deviceId = request.args.get('deviceId')
+        if len(deviceId) != 8:
+            return Response('deviceId must be a valid 8 character serial number', status=400, content_type='text/plain')
+        return Response(str(mf_wrapper.randuniform(deviceId)), content_type='text/plain')
 
     @app.route('/api/randnormal')
     def randnormal():
-        return Response(str(qng_wrapper.randnormal()), content_type='text/plain')
+        deviceId = request.args.get('deviceId')
+        if len(deviceId) != 8:
+            return Response('deviceId must be a valid 8 character serial number', status=400, content_type='text/plain')
+        return Response(str(mf_wrapper.randnormal(deviceId)), content_type='text/plain')
 
     @app.route('/api/randhex')
     def randhex():
         try:
+            deviceId = request.args.get('deviceId')
+            if len(deviceId) != 8:
+                return Response('deviceId must be a valid 8 character serial number', status=400, content_type='text/plain')
             length = int(request.args.get('length'))
             if length < 1:
                 return Response('length must be greater than 0', status=400, content_type='text/plain')
-            return Response(qng_wrapper.randbytes(length).hex(), content_type='text/plain')
+            return Response(mf_wrapper.randbytes(deviceId, length).hex(), content_type='text/plain')
         except (TypeError, ValueError) as e:
             return Response(str(e), status=400, content_type='text/plain')
 
     @app.route('/api/randbase64')
     def randbase64():
         try:
+            deviceId = request.args.get('deviceId')
+            if len(deviceId) != 8:
+                return Response('deviceId must be a valid 8 character serial number', status=400, content_type='text/plain')
             length = int(request.args.get('length'))
             if length < 1:
                 return Response('length must be greater than 0', status=400, content_type='text/plain')
-            return Response(base64.b64encode(qng_wrapper.randbytes(length)).decode('utf-8'), content_type='text/plain')
+            return Response(base64.b64encode(mf_wrapper.randbytes(deviceId, length)).decode('utf-8'), content_type='text/plain')
         except (TypeError, ValueError) as e:
             return Response(str(e), status=400, content_type='text/plain')
 
@@ -103,109 +119,135 @@ def serve(servername, port, id):
     @app.route('/api/randbytes')
     def randbytes():
         try:
+            deviceId = request.args.get('deviceId')
+            if len(deviceId) != 8:
+                return Response('deviceId must be a valid 8 character serial number', status=400, content_type='text/plain')
             length = int(request.args.get('length'))
             if length < 1:
                 return Response('length must be greater than 0', status=400, content_type='text/plain')
-            return Response(qng_wrapper.randbytes(length), content_type='application/octet-stream')
+            return Response(mf_wrapper.randbytes(deviceId, length), content_type='application/octet-stream')
         except (TypeError, ValueError) as e:
             return Response(str(e), status=400, content_type='text/plain')
 
     @app.route('/api/clear')
     def clear():
-        qng_wrapper.clear()
+        deviceId = request.args.get('deviceId')
+        if len(deviceId) != 8:
+            return Response('deviceId must be a valid 8 character serial number', status=400, content_type='text/plain')
+        mf_wrapper.clear(deviceId)
         return Response(status=204)
         
     @app.route('/api/reset')
     def reset():
-        qng_wrapper.reset()
+        mf_wrapper.reset()
         return Response(status=204)
 
     @app.route('/api/status')
-    def statusstring():
-        status = str(qng_wrapper.statusString())
-        return Response(json.dumps({"server" : servername, "device": id, "status": status}), status=400, content_type='text/plain')
+    def status():
+        status = "online" # TODO implement me
+        return Response(json.dumps({"server" : servername, "devices": id, "status": status}), status=400, content_type='text/plain')
 
     # JSON API ----------------------------------------------
+
+    @app.route('/api/json/devices')
+    def devicesjson():
+        devices = str(mf_wrapper.deviceIds(True))
+        return Response(json.dumps(devices), content_type='application/json')
 
     @app.route('/api/json/randint32')
     def randjsonint32():
         try:
-            status = str(qng_wrapper.statusString())
+            deviceId = request.args.get('deviceId')
+            if len(deviceId) != 8:
+                return Response(json.dumps({"error": 'deviceId must be a valid 8 character serial number', "success":"false"}), status=400, content_type='application/json')
+            status = str(mf_wrapper.status())
             length = int(request.args.get('length'))
             if length < 1:
-                return Response(json.dumps({"error": 'length must be greater than 0', "success":"false"}), status=400, content_type='text/plain')
+                return Response(json.dumps({"error": 'length must be greater than 0', "success":"false"}), status=400, content_type='application/json')
             int32array = []
             for x in range(0, length):
-                int32array.append(qng_wrapper.randint32())
-            return Response(json.dumps({"server" : servername, "device": id, "status": status, "type": "string", "format": "int32", "length":length, "data": int32array, "success": "true"}), content_type='text/plain')
+                int32array.append(mf_wrapper.randint32(deviceId))
+            return Response(json.dumps({"server" : servername, "device": id, "status": status, "type": "string", "format": "int32", "length":length, "data": int32array, "success": "true"}), content_type='application/json')
         except (TypeError, ValueError) as e:
-            return Response(json.dumps({"error": str(e), "status": status, "success":"false"}), status=400, content_type='text/plain')
+            return Response(json.dumps({"error": str(e), "status": status, "success":"false"}), status=400, content_type='application/json')
 
     @app.route('/api/json/randuniform')
     def randjsonuniform():
         try:
-            status = str(qng_wrapper.statusString())
+            deviceId = request.args.get('deviceId')
+            if len(deviceId) != 8:
+                return Response(json.dumps({"error": 'deviceId must be a valid 8 character serial number', "success":"false"}), status=400, content_type='application/json')
+            status = str(mf_wrapper.status())
             length = int(request.args.get('length'))
             if length < 1:
-                return Response(json.dumps({"error": 'length must be greater than 0', "success":"false"}), status=400, content_type='text/plain')
+                return Response(json.dumps({"error": 'length must be greater than 0', "success":"false"}), status=400, content_type='application/json')
             uniformarray = []
             for x in range(0, length):
-                uniformarray.append(qng_wrapper.randuniform())
-            return Response(json.dumps({"server" : servername, "device": id, "status": status, "type": "string", "format": "uniform", "length":length, "data": uniformarray, "success": "true"}), content_type='text/plain')
+                uniformarray.append(mf_wrapper.randuniform(deviceId))
+            return Response(json.dumps({"server" : servername, "device": id, "status": status, "type": "string", "format": "uniform", "length":length, "data": uniformarray, "success": "true"}), content_type='application/json')
         except (TypeError, ValueError) as e:
-            return Response(json.dumps({"error": str(e), "device": id, "status": status, "success":"false"}), status=400, content_type='text/plain')
+            return Response(json.dumps({"error": str(e), "device": id, "status": status, "success":"false"}), status=400, content_type='application/json')
 
     @app.route('/api/json/randnormal')
     def randjsonnormal():
         try:
-            status = str(qng_wrapper.statusString())
+            deviceId = request.args.get('deviceId')
+            if len(deviceId) != 8:
+                return Response(json.dumps({"error": 'deviceId must be a valid 8 character serial number', "success":"false"}), status=400, content_type='application/json')
+            status = str(mf_wrapper.status())
             length = int(request.args.get('length'))
             if length < 1:
-                return Response(json.dumps({"error": 'length must be greater than 0', "success":"false"}), status=400, content_type='text/plain')
+                return Response(json.dumps({"error": 'length must be greater than 0', "success":"false"}), status=400, content_type='application/json')
             normarray = []
             for x in range(0, length):
-                normarray.append(qng_wrapper.randnormal())
-            return Response(json.dumps({"server" : servername, "device": id, "status": status, "type": "string", "format": "normal", "length":length, "data": normarray, "success": "true"}), content_type='text/plain')
+                normarray.append(mf_wrapper.randnormal(deviceId))
+            return Response(json.dumps({"server" : servername, "device": id, "status": status, "type": "string", "format": "normal", "length":length, "data": normarray, "success": "true"}), content_type='application/json')
         except (TypeError, ValueError) as e:
-            return Response(json.dumps({"error": str(e), "device": id, "status": status, "success":"false"}), status=400, content_type='text/plain')
+            return Response(json.dumps({"error": str(e), "device": id, "status": status, "success":"false"}), status=400, content_type='application/json')
 
     @app.route('/api/json/randhex')
     def randjsonhex():
         try:
-            status = str(qng_wrapper.statusString())
+            deviceId = request.args.get('deviceId')
+            if len(deviceId) != 8:
+                return Response(json.dumps({"error": 'deviceId must be a valid 8 character serial number', "success":"false"}), status=400, content_type='application/json')
+            status = str(mf_wrapper.status())
             length = int(request.args.get('length'))
             size = int(request.args.get('size'))
             if length < 1:
-                return Response(json.dumps({"error": 'length must be greater than 0', "success":"false"}), status=400, content_type='text/plain')
+                return Response(json.dumps({"error": 'length must be greater than 0', "success":"false"}), status=400, content_type='application/json')
             if size < 1:
-                return Response(json.dumps({"error": 'size must be greater than 0', "success":"false"}), status=400, content_type='text/plain')
-#            entropy = qng_wrapper.randbytes(size*length)
+                return Response(json.dumps({"error": 'size must be greater than 0', "success":"false"}), status=400, content_type='application/json')
+#            entropy = mf_wrapper.randbytes(size*length)
             hexarray = []
             for x in range(0, length):
-                hexarray.append(qng_wrapper.randbytes(size).hex())
+                hexarray.append(mf_wrapper.randbytes(deviceId, size).hex())
 #                hexarray.append(entropy[x*size:(x+1)*size].hex())
-            return Response(json.dumps({"server" : servername, "device": id, "status": status, "type": "string", "format": "hex", "length":length, "size": size, "data": hexarray, "success": "true"}), content_type='text/plain')
+            return Response(json.dumps({"server" : servername, "device": id, "status": status, "type": "string", "format": "hex", "length":length, "size": size, "data": hexarray, "success": "true"}), content_type='application/json')
         except (TypeError, ValueError) as e:
-            return Response(json.dumps({"error": str(e), "device": id, "status": status, "success":"false"}), status=400, content_type='text/plain')
+            return Response(json.dumps({"error": str(e), "device": id, "status": status, "success":"false"}), status=400, content_type='application/json')
             
     @app.route('/api/json/randbase64')
     def randjsonbase64():
         try:
-            status = str(qng_wrapper.statusString())
+            deviceId = request.args.get('deviceId')
+            if len(deviceId) != 8:
+                return Response(json.dumps({"error": 'deviceId must be a valid 8 character serial number', "success":"false"}), status=400, content_type='application/json')
+            status = str(mf_wrapper.status())
             length = int(request.args.get('length'))
             size = int(request.args.get('size'))
             if length < 1:
-                return Response(json.dumps({"error": 'length must be greater than 0', "success":"false"}), status=400, content_type='text/plain')
+                return Response(json.dumps({"error": 'length must be greater than 0', "success":"false"}), status=400, content_type='application/json')
             if size < 1:
-                return Response(json.dumps({"error": 'size must be greater than 0', "success":"false"}), status=400, content_type='text/plain')
-#            entropy = qng_wrapper.randbytes(size*length)
+                return Response(json.dumps({"error": 'size must be greater than 0', "success":"false"}), status=400, content_type='application/json')
+#            entropy = mf_wrapper.randbytes(size*length)
             basearray = []
             for x in range(0, length):
-                basearray.append(base64.b64encode(qng_wrapper.randbytes(size)).decode('utf-8'))
+                basearray.append(base64.b64encode(mf_wrapper.randbytes(deviceId, size)).decode('utf-8'))
 #                basearray.append(base64.b64encode(entropy[x*size:(x+1)*size]).decode('utf-8'))
-            return Response(json.dumps({"server" : servername, "device": id, "status": status, "type": "string", "format": "base64", "length":length, "size": size, "data": basearray, "success": "true"}), content_type='text/plain')
+            return Response(json.dumps({"server" : servername, "device": id, "status": status, "type": "string", "format": "base64", "length":length, "size": size, "data": basearray, "success": "true"}), content_type='application/json')
         except (TypeError, ValueError) as e:
-            return Response(json.dumps({"error": str(e), "device": id, "status": status, "success":"false"}), status=400, content_type='text/plain')
+            return Response(json.dumps({"error": str(e), "device": id, "status": status, "success":"false"}), status=400, content_type='application/json')
         
 
     # Websockets ----------------------------------------------
@@ -220,31 +262,31 @@ def serve(servername, port, id):
         try:
             split_message = message.strip().upper().split()
             if split_message[0] == 'RANDINT32':
-                websocket.send(str(qng_wrapper.randint32()))
+                websocket.send(str(mf_wrapper.randint32()))
             elif split_message[0] == 'RANDUNIFORM':
-                websocket.send(str(qng_wrapper.randuniform()))
+                websocket.send(str(mf_wrapper.randuniform()))
             elif split_message[0] == 'RANDNORMAL':
-                websocket.send(str(qng_wrapper.randnormal()))
+                websocket.send(str(mf_wrapper.randnormal()))
             elif split_message[0] == 'RANDBYTES':
                 length = int(split_message[1])
                 if length < 1:
                     raise ValueError()
-                websocket.send(qng_wrapper.randbytes(length))
+                websocket.send(mf_wrapper.randbytes(length))
             elif split_message[0] == 'SUBSCRIBEINT32':
                 if not subscribed[0]:
                     subscribed[0] = True
                     while subscribed[0] and not websocket.closed:
-                        websocket.send(str(qng_wrapper.randint32()))
+                        websocket.send(str(mf_wrapper.randint32()))
             elif split_message[0] == 'SUBSCRIBEUNIFORM':
                 if not subscribed[0]:
                     subscribed[0] = True
                     while subscribed[0] and not websocket.closed:
-                        websocket.send(str(qng_wrapper.randuniform()))
+                        websocket.send(str(mf_wrapper.randuniform()))
             elif split_message[0] == 'SUBSCRIBENORMAL':
                 if not subscribed[0]:
                     subscribed[0] = True
                     while subscribed[0] and not websocket.closed:
-                        websocket.send(str(qng_wrapper.randnormal()))
+                        websocket.send(str(mf_wrapper.randnormal()))
             elif split_message[0] == 'SUBSCRIBEBYTES':
                 chunk = int(split_message[1])
                 if chunk < 1:
@@ -252,7 +294,7 @@ def serve(servername, port, id):
                 if not subscribed[0]:
                     subscribed[0] = True
                     while subscribed[0] and not websocket.closed:
-                        websocket.send(qng_wrapper.randbytes(chunk))
+                        websocket.send(mf_wrapper.randbytes(chunk))
             elif split_message[0] == 'SUBSCRIBEHEX':
                 chunk = int(split_message[1])
                 if chunk < 1:
@@ -260,12 +302,12 @@ def serve(servername, port, id):
                 if not subscribed[0]:
                     subscribed[0] = True
                     while subscribed[0] and not websocket.closed:
-                        websocket.send(qng_wrapper.randbytes(chunk).hex())
+                        websocket.send(mf_wrapper.randbytes(chunk).hex())
             elif split_message[0] == 'UNSUBSCRIBE':
                 subscribed[0] = False
                 websocket.send('UNSUBSCRIBED')
             elif split_message[0] == 'CLEAR':
-                qng_wrapper.clear()
+                mf_wrapper.clear()
         except (IndexError, ValueError, BlockingIOError):
             pass
         except Exception as e:
