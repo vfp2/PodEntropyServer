@@ -261,53 +261,85 @@ def serve(servername, port, id):
     def handle_ws_message(message, websocket, subscribed):
         try:
             split_message = message.strip().upper().split()
-            if split_message[0] == 'RANDINT32':
-                websocket.send(str(mf_wrapper.randint32()))
+            if split_message[0] == 'DEVICES':
+                websocket.send(str(mf_wrapper.deviceIds(False)))
+            elif split_message[0] == 'RANDINT32':
+                deviceId = split_message[1]
+                if len(deviceId) != 8:
+                    raise ValueError()
+                websocket.send(str(mf_wrapper.randint32(deviceId)))
             elif split_message[0] == 'RANDUNIFORM':
-                websocket.send(str(mf_wrapper.randuniform()))
+                deviceId = split_message[1]
+                if len(deviceId) != 8:
+                    raise ValueError()
+                websocket.send(str(mf_wrapper.randuniform(deviceId)))
             elif split_message[0] == 'RANDNORMAL':
-                websocket.send(str(mf_wrapper.randnormal()))
+                deviceId = split_message[1]
+                if len(deviceId) != 8:
+                    raise ValueError()
+                websocket.send(str(mf_wrapper.randnormal(deviceId)))
             elif split_message[0] == 'RANDBYTES':
-                length = int(split_message[1])
+                deviceId = split_message[1]
+                if len(deviceId) != 8:
+                    raise ValueError()
+                length = int(split_message[2])
                 if length < 1:
                     raise ValueError()
-                websocket.send(mf_wrapper.randbytes(length))
+                websocket.send(mf_wrapper.randbytes(deviceId, length))
             elif split_message[0] == 'SUBSCRIBEINT32':
+                deviceId = split_message[1]
+                if len(deviceId) != 8:
+                    raise ValueError()
                 if not subscribed[0]:
                     subscribed[0] = True
                     while subscribed[0] and not websocket.closed:
-                        websocket.send(str(mf_wrapper.randint32()))
+                        websocket.send(str(mf_wrapper.randint32(deviceId)))
             elif split_message[0] == 'SUBSCRIBEUNIFORM':
+                deviceId = split_message[1]
+                if len(deviceId) != 8:
+                    raise ValueError()
                 if not subscribed[0]:
                     subscribed[0] = True
                     while subscribed[0] and not websocket.closed:
-                        websocket.send(str(mf_wrapper.randuniform()))
+                        websocket.send(str(mf_wrapper.randuniform(deviceId)))
             elif split_message[0] == 'SUBSCRIBENORMAL':
+                deviceId = split_message[1]
+                if len(deviceId) != 8:
+                    raise ValueError()
                 if not subscribed[0]:
                     subscribed[0] = True
                     while subscribed[0] and not websocket.closed:
-                        websocket.send(str(mf_wrapper.randnormal()))
+                        websocket.send(str(mf_wrapper.randnormal(deviceId)))
             elif split_message[0] == 'SUBSCRIBEBYTES':
-                chunk = int(split_message[1])
+                deviceId = split_message[1]
+                if len(deviceId) != 8:
+                    raise ValueError()
+                chunk = int(split_message[2])
                 if chunk < 1:
                     raise ValueError()
                 if not subscribed[0]:
                     subscribed[0] = True
                     while subscribed[0] and not websocket.closed:
-                        websocket.send(mf_wrapper.randbytes(chunk))
+                        websocket.send(mf_wrapper.randbytes(deviceId, chunk))
             elif split_message[0] == 'SUBSCRIBEHEX':
-                chunk = int(split_message[1])
+                deviceId = split_message[1]
+                if len(deviceId) != 8:
+                    raise ValueError()
+                chunk = int(split_message[2])
                 if chunk < 1:
                     raise ValueError()
                 if not subscribed[0]:
                     subscribed[0] = True
                     while subscribed[0] and not websocket.closed:
-                        websocket.send(mf_wrapper.randbytes(chunk).hex())
+                        websocket.send(mf_wrapper.randbytes(deviceId, chunk).hex())
             elif split_message[0] == 'UNSUBSCRIBE':
                 subscribed[0] = False
                 websocket.send('UNSUBSCRIBED')
             elif split_message[0] == 'CLEAR':
-                mf_wrapper.clear()
+                deviceId = split_message[1]
+                if len(deviceId) != 8:
+                    raise ValueError()
+                mf_wrapper.clear(deviceId)
         except (IndexError, ValueError, BlockingIOError):
             pass
         except Exception as e:
