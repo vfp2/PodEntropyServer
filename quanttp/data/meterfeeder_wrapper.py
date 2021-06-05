@@ -53,7 +53,7 @@ class MeterFeederWrapper:
         # Initialize Meter Feeder
         result = self._meterfeeder.MF_Initialize(self._medErrorReason)
         if (len(self._medErrorReason.value) > 0):
-            print(self._medErrorReason)
+            print(self._medErrorReason.value)
             exit(result)
 
     def deviceIds(self, returnAsList):
