@@ -163,95 +163,95 @@ def serve(servername, port, id):
         try:
             deviceId = request.args.get('deviceId')
             if len(deviceId) != 8:
-                return Response(json.dumps({"error": 'deviceId must be a valid 8 character serial number', "success":"false"}), status=400, content_type='application/json')
+                return Response(json.dumps({"error": 'deviceId must be a valid 8 character serial number', "success":False}), status=400, content_type='application/json')
             status = str(mf_wrapper.status())
             length = int(request.args.get('length'))
             if length < 1:
-                return Response(json.dumps({"error": 'length must be greater than 0', "success":"false"}), status=400, content_type='application/json')
+                return Response(json.dumps({"error": 'length must be greater than 0', "success":False}), status=400, content_type='application/json')
             int32array = []
             for x in range(0, length):
                 int32array.append(mf_wrapper.randint32(deviceId))
-            return Response(json.dumps({"server" : servername, "device": id, "status": status, "type": "string", "format": "int32", "length":length, "data": int32array, "success": "true"}), content_type='application/json')
+            return Response(json.dumps({"server" : servername, "device": id, "status": status, "type": "string", "format": "int32", "length":length, "data": int32array, "success":True}), content_type='application/json')
         except (TypeError, ValueError) as e:
-            return Response(json.dumps({"error": str(e), "status": status, "success":"false"}), status=400, content_type='application/json')
+            return Response(json.dumps({"error": str(e), "status": status, "success":False}), status=400, content_type='application/json')
 
     @app.route('/api/json/randuniform')
     def randjsonuniform():
         try:
             deviceId = request.args.get('deviceId')
             if len(deviceId) != 8:
-                return Response(json.dumps({"error": 'deviceId must be a valid 8 character serial number', "success":"false"}), status=400, content_type='application/json')
+                return Response(json.dumps({"error": 'deviceId must be a valid 8 character serial number', "success":False}), status=400, content_type='application/json')
             status = str(mf_wrapper.status())
             length = int(request.args.get('length'))
             if length < 1:
-                return Response(json.dumps({"error": 'length must be greater than 0', "success":"false"}), status=400, content_type='application/json')
+                return Response(json.dumps({"error": 'length must be greater than 0', "success":False}), status=400, content_type='application/json')
             uniformarray = []
             for x in range(0, length):
                 uniformarray.append(mf_wrapper.randuniform(deviceId))
-            return Response(json.dumps({"server" : servername, "device": id, "status": status, "type": "string", "format": "uniform", "length":length, "data": uniformarray, "success": "true"}), content_type='application/json')
+            return Response(json.dumps({"server" : servername, "device": id, "status": status, "type": "string", "format": "uniform", "length":length, "data": uniformarray, "success":True}), content_type='application/json')
         except (TypeError, ValueError) as e:
-            return Response(json.dumps({"error": str(e), "device": id, "status": status, "success":"false"}), status=400, content_type='application/json')
+            return Response(json.dumps({"error": str(e), "device": id, "status": status, "success":False}), status=400, content_type='application/json')
 
     @app.route('/api/json/randnormal')
     def randjsonnormal():
         try:
             deviceId = request.args.get('deviceId')
             if len(deviceId) != 8:
-                return Response(json.dumps({"error": 'deviceId must be a valid 8 character serial number', "success":"false"}), status=400, content_type='application/json')
+                return Response(json.dumps({"error": 'deviceId must be a valid 8 character serial number', "success":False}), status=400, content_type='application/json')
             status = str(mf_wrapper.status())
             length = int(request.args.get('length'))
             if length < 1:
-                return Response(json.dumps({"error": 'length must be greater than 0', "success":"false"}), status=400, content_type='application/json')
+                return Response(json.dumps({"error": 'length must be greater than 0', "success":False}), status=400, content_type='application/json')
             normarray = []
             for x in range(0, length):
                 normarray.append(mf_wrapper.randnormal(deviceId))
-            return Response(json.dumps({"server" : servername, "device": id, "status": status, "type": "string", "format": "normal", "length":length, "data": normarray, "success": "true"}), content_type='application/json')
+            return Response(json.dumps({"server" : servername, "device": id, "status": status, "type": "string", "format": "normal", "length":length, "data": normarray, "success":True}), content_type='application/json')
         except (TypeError, ValueError) as e:
-            return Response(json.dumps({"error": str(e), "device": id, "status": status, "success":"false"}), status=400, content_type='application/json')
+            return Response(json.dumps({"error": str(e), "device": id, "status": status, "success":False}), status=400, content_type='application/json')
 
     @app.route('/api/json/randhex')
     def randjsonhex():
         try:
             deviceId = request.args.get('deviceId')
             if len(deviceId) != 8:
-                return Response(json.dumps({"error": 'deviceId must be a valid 8 character serial number', "success":"false"}), status=400, content_type='application/json')
+                return Response(json.dumps({"error": 'deviceId must be a valid 8 character serial number', "success":False}), status=400, content_type='application/json')
             status = str(mf_wrapper.status())
             length = int(request.args.get('length'))
             size = int(request.args.get('size'))
             if length < 1:
-                return Response(json.dumps({"error": 'length must be greater than 0', "success":"false"}), status=400, content_type='application/json')
+                return Response(json.dumps({"error": 'length must be greater than 0', "success":False}), status=400, content_type='application/json')
             if size < 1:
-                return Response(json.dumps({"error": 'size must be greater than 0', "success":"false"}), status=400, content_type='application/json')
+                return Response(json.dumps({"error": 'size must be greater than 0', "success":False}), status=400, content_type='application/json')
 #            entropy = mf_wrapper.randbytes(size*length)
             hexarray = []
             for x in range(0, length):
                 hexarray.append(mf_wrapper.randbytes(deviceId, size).hex())
 #                hexarray.append(entropy[x*size:(x+1)*size].hex())
-            return Response(json.dumps({"server" : servername, "device": id, "status": status, "type": "string", "format": "hex", "length":length, "size": size, "data": hexarray, "success": "true"}), content_type='application/json')
+            return Response(json.dumps({"server" : servername, "device": id, "status": status, "type": "string", "format": "hex", "length":length, "size": size, "data": hexarray, "success":True}), content_type='application/json')
         except (TypeError, ValueError) as e:
-            return Response(json.dumps({"error": str(e), "device": id, "status": status, "success":"false"}), status=400, content_type='application/json')
+            return Response(json.dumps({"error": str(e), "device": id, "status": status, "success":False}), status=400, content_type='application/json')
             
     @app.route('/api/json/randbase64')
     def randjsonbase64():
         try:
             deviceId = request.args.get('deviceId')
             if len(deviceId) != 8:
-                return Response(json.dumps({"error": 'deviceId must be a valid 8 character serial number', "success":"false"}), status=400, content_type='application/json')
+                return Response(json.dumps({"error": 'deviceId must be a valid 8 character serial number', "success":False}), status=400, content_type='application/json')
             status = str(mf_wrapper.status())
             length = int(request.args.get('length'))
             size = int(request.args.get('size'))
             if length < 1:
-                return Response(json.dumps({"error": 'length must be greater than 0', "success":"false"}), status=400, content_type='application/json')
+                return Response(json.dumps({"error": 'length must be greater than 0', "success":False}), status=400, content_type='application/json')
             if size < 1:
-                return Response(json.dumps({"error": 'size must be greater than 0', "success":"false"}), status=400, content_type='application/json')
+                return Response(json.dumps({"error": 'size must be greater than 0', "success":False}), status=400, content_type='application/json')
 #            entropy = mf_wrapper.randbytes(size*length)
             basearray = []
             for x in range(0, length):
                 basearray.append(base64.b64encode(mf_wrapper.randbytes(deviceId, size)).decode('utf-8'))
 #                basearray.append(base64.b64encode(entropy[x*size:(x+1)*size]).decode('utf-8'))
-            return Response(json.dumps({"server" : servername, "device": id, "status": status, "type": "string", "format": "base64", "length":length, "size": size, "data": basearray, "success": "true"}), content_type='application/json')
+            return Response(json.dumps({"server" : servername, "device": id, "status": status, "type": "string", "format": "base64", "length":length, "size": size, "data": basearray, "success":True}), content_type='application/json')
         except (TypeError, ValueError) as e:
-            return Response(json.dumps({"error": str(e), "device": id, "status": status, "success":"false"}), status=400, content_type='application/json')
+            return Response(json.dumps({"error": str(e), "device": id, "status": status, "success":False}), status=400, content_type='application/json')
         
 
     # Websockets ----------------------------------------------
