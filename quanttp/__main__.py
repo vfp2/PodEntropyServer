@@ -47,13 +47,17 @@ def main():
 
     if argNo < 2:
         print("--------------------------------------------")
-        print("Please provide arguments: <servername> <port>")
+        print("Please provide arguments: <servername> <port> [CSV device IDs]")
         print("--------------------------------------------")
     else:
         servername = sys.argv[1]
         port = int(sys.argv[2])
         ip = requests.get('https://api.ipify.org').text
-        id = str(mf_wrapper.deviceIds(False))
+        id = ""
+        if len(sys.argv) > 3:
+            id = sys.argv[3]
+        else:
+            id = str(mf_wrapper.deviceIds(False))
         print("----------------------------------------------------------------------------------------")
         print("Serving Entropy from TRNG ", id, " as pod \"", servername, "\" on http://", ip, ":", port, "/api/...", sep='')
         print("----------------------------------------------------------------------------------------")
