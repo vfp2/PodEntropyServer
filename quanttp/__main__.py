@@ -171,7 +171,7 @@ def serve(servername, port, id):
             int32array = []
             for x in range(0, length):
                 int32array.append(mf_wrapper.randint32(deviceId))
-            return Response(json.dumps({"server" : servername, "device": id, "status": status, "type": "string", "format": "int32", "length":length, "data": int32array, "success":True}), content_type='application/json')
+            return Response(json.dumps({"server" : servername, "device": deviceId, "status": status, "type": "string", "format": "int32", "length":length, "data": int32array, "success":True}), content_type='application/json')
         except (TypeError, ValueError) as e:
             return Response(json.dumps({"error": str(e), "status": status, "success":False}), status=400, content_type='application/json')
 
@@ -188,7 +188,7 @@ def serve(servername, port, id):
             uniformarray = []
             for x in range(0, length):
                 uniformarray.append(mf_wrapper.randuniform(deviceId))
-            return Response(json.dumps({"server" : servername, "device": id, "status": status, "type": "string", "format": "uniform", "length":length, "data": uniformarray, "success":True}), content_type='application/json')
+            return Response(json.dumps({"server" : servername, "device": deviceId, "status": status, "type": "string", "format": "uniform", "length":length, "data": uniformarray, "success":True}), content_type='application/json')
         except (TypeError, ValueError) as e:
             return Response(json.dumps({"error": str(e), "device": id, "status": status, "success":False}), status=400, content_type='application/json')
 
@@ -205,7 +205,7 @@ def serve(servername, port, id):
             normarray = []
             for x in range(0, length):
                 normarray.append(mf_wrapper.randnormal(deviceId))
-            return Response(json.dumps({"server" : servername, "device": id, "status": status, "type": "string", "format": "normal", "length":length, "data": normarray, "success":True}), content_type='application/json')
+            return Response(json.dumps({"server" : servername, "device": deviceId, "status": status, "type": "string", "format": "normal", "length":length, "data": normarray, "success":True}), content_type='application/json')
         except (TypeError, ValueError) as e:
             return Response(json.dumps({"error": str(e), "device": id, "status": status, "success":False}), status=400, content_type='application/json')
 
@@ -227,7 +227,7 @@ def serve(servername, port, id):
             for x in range(0, length):
                 hexarray.append(mf_wrapper.randbytes(deviceId, size).hex())
 #                hexarray.append(entropy[x*size:(x+1)*size].hex())
-            return Response(json.dumps({"server" : servername, "device": id, "status": status, "type": "string", "format": "hex", "length":length, "size": size, "data": hexarray, "success":True}), content_type='application/json')
+            return Response(json.dumps({"server" : servername, "device": deviceId, "status": status, "type": "string", "format": "hex", "length":length, "size": size, "data": hexarray, "success":True}), content_type='application/json')
         except (TypeError, ValueError) as e:
             return Response(json.dumps({"error": str(e), "device": id, "status": status, "success":False}), status=400, content_type='application/json')
             
@@ -249,7 +249,7 @@ def serve(servername, port, id):
             for x in range(0, length):
                 basearray.append(base64.b64encode(mf_wrapper.randbytes(deviceId, size)).decode('utf-8'))
 #                basearray.append(base64.b64encode(entropy[x*size:(x+1)*size]).decode('utf-8'))
-            return Response(json.dumps({"server" : servername, "device": id, "status": status, "type": "string", "format": "base64", "length":length, "size": size, "data": basearray, "success":True}), content_type='application/json')
+            return Response(json.dumps({"server" : servername, "device": deviceId, "status": status, "type": "string", "format": "base64", "length":length, "size": size, "data": basearray, "success":True}), content_type='application/json')
         except (TypeError, ValueError) as e:
             return Response(json.dumps({"error": str(e), "device": id, "status": status, "success":False}), status=400, content_type='application/json')
         
