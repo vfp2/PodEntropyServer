@@ -351,7 +351,7 @@ def serve(servername, port, id):
 
     @app.errorhandler(Exception)
     def handle_exception(e):
-        return Response(e.description, status=e.code, content_type='text/plain')
+        return Response(json.dumps({"error": str(e), "status": "error", "success":False}), status=400, content_type='application/json')
 
     server = pywsgi.WSGIServer(('0.0.0.0', port), application=app, handler_class=WebSocketHandler)
     server.serve_forever()
