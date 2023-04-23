@@ -1,6 +1,6 @@
 Flask==2.0.1
 Flask-Sockets==0.2.1
-gevent==21.1.2
+gevent==22.10.2
 gevent-websocket==0.10.1
 pywin32==301; platform_system == 'Windows'
 requests==2.25.1
